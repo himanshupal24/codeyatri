@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { auth } from '../../Firebase/Firebase.init';
-import { signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import useEnrolledCourses from '../../hooks/useEnrolledCourses';
 import MyCourse from './MyCourse';
@@ -92,11 +92,23 @@ function RenderSection({ query, currentUser }) {
 }
 
 const Dashboard = () => {
+    const navigate = useNavigate();
+    const [loginned, setLoginned] = React.useState(null);
+      useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          setLoginned(user || null);
+        });
+        return () => unsubscribe();
+      }, []);
+
     const [searchParams] = useSearchParams();
     const section = searchParams.get('section') || 'courses';
-    const navigate = useNavigate();
     const currentUser = auth.currentUser;
     // Handle Logout
+    if (!loginned) {
+        toast.error("Not loginned");
+        navigate("/");
+    }
     const handleLogout = () => {
         signOut(auth)
             .then(() => {
